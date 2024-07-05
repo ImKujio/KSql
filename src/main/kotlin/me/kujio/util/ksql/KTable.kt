@@ -24,9 +24,10 @@ open class KTable<T : Any>(kClass: KClass<T>, table: String? = null) {
 
     val columns get() = properties.map { if (enabledSnakeCase) camelToSnake(it.name) else it.name }
 
-    fun select(build: KSql.Builder.() -> String = {""}): List<T> {
-        val sql = KSql { "Select ${join(columns) { it }} From $tableName Where" }
-        return sql.and(build).query { from(it) }
+    fun select(build: (KSql.Builder.() -> String)? = null): List<T> {
+        val sql = KSql { "Select ${join(columns) { it }} From $tableName" }
+        if (build != null) sql.and { "Where" }.and(build)
+        return sql.query { from(it) }
     }
 
     fun values(data: T): Map<String, Any?> {
@@ -60,7 +61,7 @@ open class KTable<T : Any>(kClass: KClass<T>, table: String? = null) {
     companion object {
 
         /** 开启驼峰转下划线 */
-        var enabledSnakeCase = true
+        var enabledSnakeCase = false
 
         private fun camelToSnake(camelCase: String): String {
             return camelCase

@@ -57,7 +57,7 @@ class KSql(build: Builder.() -> String) {
         }
     }
 
-    fun and(build: Builder.() -> String):KSql {
+    fun and(build: Builder.() -> String): KSql {
         sqlBuilder.append(" ").append(Builder(paramList).build())
         return this
     }
@@ -72,7 +72,8 @@ class KSql(build: Builder.() -> String) {
                 continue
             }
             val kType = value::class.starProjectedType
-            val columnType: KColumnType = columnTypes[kType] ?: throw RuntimeException("Unsupported type: ${kType.toString()},param index:$index, param value:$value")
+            val columnType: KColumnType =
+                columnTypes[kType] ?: throw RuntimeException("Unsupported type: ${kType.toString()},param index:$index, param value:$value")
             columnType.toSql(stm, index + 1, value)
         }
         return stm
@@ -88,7 +89,7 @@ class KSql(build: Builder.() -> String) {
         return result
     }
 
-    fun <T> query(transform: (row:ResultRow) -> T): List<T> {
+    fun <T> query(transform: (row: ResultRow) -> T): List<T> {
         var isTransaction = false
         val connection = localConnection.get()?.also { isTransaction = true } ?: getConnection().apply { autoCommit = true }
         val statement = prepare(connection)
@@ -142,13 +143,15 @@ fun transaction(operation: () -> Unit) {
 
 /** 查询结果行 */
 class ResultRow(val resultSet: ResultSet) {
+
     inline operator fun <reified T> get(filed: String): T? {
         val columnType = KSql.columnTypes[T::class.starProjectedType] ?: throw RuntimeException("Unsupported type: ${T::class}")
         val value = columnType.fromSql(resultSet, filed)
         if (resultSet.wasNull()) return null
         return value as T
     }
-    fun get(type:KType,filed: String):Any?{
+
+    fun get(type: KType, filed: String): Any? {
         val realType = if (type.isMarkedNullable) type.withNullability(false) else type
         val columnType = KSql.columnTypes[realType] ?: throw RuntimeException("Unsupported type: ${type}")
         val value = columnType.fromSql(resultSet, filed)
